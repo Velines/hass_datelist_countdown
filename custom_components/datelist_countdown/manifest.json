@@ -1,0 +1,12 @@
+{
+  "domain": "datelist_countdown",
+  "name": "Countdown based on a list of dates",
+  "documentation": "https://github.com/Velines/hass_datelist_countdown",
+  "iot_class": "local_polling",
+  "issue_tracker": "https://github.com/Velines/hass_datelist_countdown/issues",
+  "version": "0.0.2",
+  "config_flow": false,
+  "codeowners": [
+    "@Velines"
+  ]
+}

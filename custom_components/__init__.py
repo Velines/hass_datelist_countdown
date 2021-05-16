@@ -1,1 +1,1 @@
-"""Custom components module."""
+"""datelist_countdown module."""

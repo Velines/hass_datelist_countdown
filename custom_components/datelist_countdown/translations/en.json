@@ -1,0 +1,28 @@
+{
+    "config": {
+        "step": {
+            "user": {
+                "title": "Date List Countdown",
+                "description": "",
+                "data": {
+                    "dates": "Dates"
+                }
+            }
+        },
+        "error": {
+            "empty": "Datelist is empty!"
+        },
+        "abort": {
+            
+        }
+    },
+    "options": {
+        "step": {
+            "user": {
+                "data": {
+                    "invalid format": "Invalid format! Enter a single date per line in YYYY-MM-DD format"
+                }
+            }
+        }
+    }
+}
