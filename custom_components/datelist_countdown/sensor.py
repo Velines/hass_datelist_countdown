@@ -70,7 +70,7 @@ class DateListCountdown(Entity):
         return TIME_DAYS
 
     @property
-    def device_state_attributes(self):
+    def extra_state_attributes(self):
         return {
             ATTR_NEXT: self._data.get("next"),
             ATTR_ADAPTIVE_NEXT: self._data.get("adaptive_next")
