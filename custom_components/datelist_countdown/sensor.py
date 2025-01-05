@@ -2,14 +2,13 @@ import datetime
 import logging
 
 # TODO this needs to be adopted to read the list of dates from the place configuration has saved it
-
 import voluptuous as vol
+
+from homeassistant.components.sensor import PLATFORM_SCHEMA as SENSOR_PLATFORM_SCHEMA
+from homeassistant.const import CONF_ICON, CONF_NAME, UnitOfTime
 import homeassistant.helpers.config_validation as cv
-from homeassistant.components.sensor import PLATFORM_SCHEMA
-from homeassistant.const import CONF_NAME, CONF_ICON, TIME_DAYS
 from homeassistant.helpers.entity import Entity
 from homeassistant.util import Throttle
-
 
 ATTR_NEXT = "next"
 ATTR_ADAPTIVE_NEXT = "adaptive_next"
@@ -20,15 +19,18 @@ CONF_FILE_NAME = "file_name"
 MIN_TIME_BETWEEN_UPDATES = datetime.timedelta(hours=1)
 
 
-PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
-    vol.Required(CONF_FILE_NAME): cv.isfile,
-    vol.Optional(CONF_NAME, default=DEFAULT_NAME): cv.string,
-    vol.Optional(CONF_ICON, default=DEFAULT_ICON): cv.string
-})
+SENSOR_PLATFORM_SCHEMA = SENSOR_PLATFORM_SCHEMA.extend(
+    {
+        vol.Required(CONF_FILE_NAME): cv.isfile,
+        vol.Optional(CONF_NAME, default=DEFAULT_NAME): cv.string,
+        vol.Optional(CONF_ICON, default=DEFAULT_ICON): cv.string,
+    }
+)
 
 _LOGGER = logging.getLogger(__name__)
 
-def setup_platform(hass, config, add_devices, discovery_info=None):
+
+def setup_platform(HomeAssistant, config, add_devices, discovery_info=None):
     """Set up date list countdown sensor."""
     sensor_name = config.get(CONF_NAME)
     file_name = config.get(CONF_FILE_NAME)
@@ -36,11 +38,10 @@ def setup_platform(hass, config, add_devices, discovery_info=None):
     add_devices([DateListCountdown(sensor_name, file_name, icon)])
 
 
-
 class DateListCountdown(Entity):
     """Implementation of the date list countdown sensor."""
 
-    def __init__(self, sensor_name, file_name, icon):
+    def __init__(self, sensor_name, file_name, icon) -> None:
         """Initialize the sensor."""
         self._name = sensor_name
         self._file_name = file_name
@@ -67,20 +68,20 @@ class DateListCountdown(Entity):
     @property
     def unit_of_measurement(self):
         """Return state of sensor."""
-        return TIME_DAYS
+        return UnitOfTime.DAYS
 
     @property
     def extra_state_attributes(self):
         return {
             ATTR_NEXT: self._data.get("next"),
-            ATTR_ADAPTIVE_NEXT: self._data.get("adaptive_next")
+            ATTR_ADAPTIVE_NEXT: self._data.get("adaptive_next"),
         }
 
     @Throttle(MIN_TIME_BETWEEN_UPDATES)
     def update(self):
-        """Find next date and calculate difference in days"""
+        """Find next date and calculate difference in days."""
 
-        _LOGGER.info("begin update()")
+        _LOGGER.debug("begin update()")
         allDates = []
 
         # Liste einlesen
@@ -90,18 +91,20 @@ class DateListCountdown(Entity):
                     l = line.strip()
                     if not l:
                         continue
-                    _LOGGER.info("read line: " + l)
+                    _LOGGER.debug("read line: '%s'", l)
                     d = datetime.datetime.strptime(l, "%Y-%m-%d")
-                    _LOGGER.info("converted to datetime: " + str(d))
+                    _LOGGER.debug("converted to datetime: %s", str(d))
                     allDates.append(d)
                 except Exception as e:
-                    _LOGGER.warning("Unable to convert date: '" + line + "'")
+                    _LOGGER.warning(
+                        "DateListCountdown: Unable to convert date: '%s'", line
+                    )
                     _LOGGER.warning(e)
 
         # return when list empty
         if not allDates:
             self._state = None
-            _LOGGER.error("no valid dates found")
+            _LOGGER.error("No valid dates found!")
             return
 
         # sortieren
@@ -121,7 +124,7 @@ class DateListCountdown(Entity):
             if date == today:
                 currentNext = date
                 if i + 1 < len(allDates):
-                    adaptiveNext = allDates[i+1]
+                    adaptiveNext = allDates[i + 1]
                 break
             if date > today:
                 currentNext = date
@@ -132,13 +135,16 @@ class DateListCountdown(Entity):
         self._data["next"] = None
         self._data["adaptive_next"] = None
 
-        if(currentNext == None):
+        if currentNext is None:
             return
 
         delta = currentNext - today
         self._state = delta.days
-        self._data["next"] = datetime.date(currentNext.year, currentNext.month, currentNext.day).isoformat()
+        self._data["next"] = datetime.date(
+            currentNext.year, currentNext.month, currentNext.day
+        ).isoformat()
         if adaptiveNext != None:
-            self._data["adaptive_next"] = datetime.date(adaptiveNext.year, adaptiveNext.month, adaptiveNext.day).isoformat()
-        _LOGGER.info("end update()")
-
+            self._data["adaptive_next"] = datetime.date(
+                adaptiveNext.year, adaptiveNext.month, adaptiveNext.day
+            ).isoformat()
+        _LOGGER.debug("end update()")
